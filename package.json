@@ -1,0 +1,14 @@
+{
+  "name": "playwright-api-ui-framework",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:debug": "npx playwright test --debug"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "dotenv": "^16.6.1",
+    "typescript": "^5.0.0"
+  }
+}
