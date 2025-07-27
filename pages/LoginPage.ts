@@ -1,21 +1,56 @@
-import { Page } from '@playwright/test';
+import { Page, Locator } from '@playwright/test';
+import { BasePage } from './BasePage';
 
-export class LoginPage {
-  constructor(private page: Page) {}
+export class LoginPage extends BasePage {
+  readonly usernameInput: Locator;
+  readonly passwordInput: Locator;
+  readonly loginButton: Locator;
+  readonly errorMessage: Locator;
+  readonly forgotPasswordLink: Locator;
 
-  async goto() {
-    await this.page.goto('/');
+  constructor(page: Page) {
+    super(page);
+    this.usernameInput = page.locator('input[placeholder="Username"]');
+    this.passwordInput = page.locator('input[placeholder="Password"]');
+    this.loginButton = page.locator('button[type="submit"]');
+    this.errorMessage = page.locator('.oxd-alert-content-text');
+    this.forgotPasswordLink = page.locator('text="Forgot your password?"');
   }
 
-  async login(username: string, password: string) {
-    await this.page.fill('input[placeholder="Username"]', username);
-    await this.page.fill('input[placeholder="Password"]', password);
-    await this.page.click('button[type="submit"]');
+  async goto(): Promise<void> {
+    await super.goto('/');
+    await this.waitForPageLoad();
+  }
 
-    if (await this.page.isVisible('.oxd-alert-content-text')) {
-      throw new Error('Login failed: Invalid credentials');
+  async login(username: string, password: string): Promise<void> {
+    await this.fillInput(this.usernameInput, username);
+    await this.fillInput(this.passwordInput, password);
+    await this.clickElement(this.loginButton);
+
+    // Check for error message
+    if (await this.isVisible(this.errorMessage)) {
+      const errorText = await this.getText(this.errorMessage);
+      throw new Error(`Login failed: ${errorText}`);
     }
 
-    await this.page.waitForSelector('h6:has-text("Dashboard")');
+    // Wait for successful login redirect
+    await this.page.waitForSelector('h6:has-text("Dashboard")', { timeout: 10000 });
+  }
+
+  async getErrorMessage(): Promise<string> {
+    if (await this.isVisible(this.errorMessage)) {
+      return await this.getText(this.errorMessage);
+    }
+    return '';
+  }
+
+  async clickForgotPassword(): Promise<void> {
+    await this.clickElement(this.forgotPasswordLink);
+  }
+
+  async isLoginFormVisible(): Promise<boolean> {
+    return await this.isVisible(this.usernameInput) && 
+           await this.isVisible(this.passwordInput) && 
+           await this.isVisible(this.loginButton);
   }
 }
